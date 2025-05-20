@@ -1,7 +1,8 @@
 streamlit==1.35.0
-torch==2.2.2
-torchaudio==2.2.0
+torch==2.1.2
+torchaudio==2.1.2
 speechbrain==0.5.16
 streamlit-webrtc==0.46.1
 numpy
 av
+
