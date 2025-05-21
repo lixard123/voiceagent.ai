@@ -30,6 +30,7 @@ HyperPyYAML==1.2.2
 idna==3.10
 ifaddr==0.2.0
 imageio==2.37.0
+ffmpeg
 imageio-ffmpeg==0.6.0
 itsdangerous==2.2.0
 Jinja2==3.1.6
