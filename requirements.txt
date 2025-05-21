@@ -1,24 +1,21 @@
 av==14.4.0
 geopandas==1.0.1
-numpy==2.0.2
+numpy==1.24.4
 pandas==2.2.2
 pandas-datareader==0.10.0
 pandas-gbq==0.28.1
 pandas-stubs==2.2.2.240909
 PyWavelets==1.8.0
-sentence-transformers==4.1.0
+sentence-transformers==2.2.2
 sklearn-pandas==2.2.0
-streamlit==1.45.1
+streamlit==1.22.0
 streamlit-webrtc==0.62.4
-transformers==4.51.3
-
-# CPU-safe PyTorch ecosystem
-torch==2.1.2+cpu
-torchaudio==2.1.2+cpu
-torchvision==0.16.2+cpu
-torchdata==0.6.1
+torch==2.1.0+cpu --index-url https://download.pytorch.org/whl/cpu
+torchdata==0.11.0
 torchsummary==1.5.1
 torchtune==0.6.1
-torchao==0.10.0
-
---index-url https://download.pytorch.org/whl/cpu
+transformers==4.51.3
+rich==14.0.0
+markdown-it-py==3.0.0
+mdurl==0.1.2
+pygments==2.19.1
