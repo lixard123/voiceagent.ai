@@ -3,6 +3,8 @@ transformers
 streamlit-webrtc
 av
 numpy
+torchaudio
+os
 
 
 
