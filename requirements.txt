@@ -1,6 +1,7 @@
 streamlit
-torchaudio
+transformers
 streamlit-webrtc
+av
 numpy
 
 
