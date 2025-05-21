@@ -1,4 +1,4 @@
-av==14.4.0
+ av==14.4.0
 geopandas==1.0.1
 numpy==2.0.2
 pandas==2.2.2
@@ -10,8 +10,7 @@ sentence-transformers==4.1.0
 sklearn-pandas==2.2.0
 streamlit==1.45.1
 streamlit-webrtc==0.62.4
-torch==2.1.2+cpu
---index-url https://download.pytorch.org/whl/cpu
+torch==2.1.2+cpu --index-url https://download.pytorch.org/whl/cpu
 torchao==0.10.0
 torchaudio @ https://download.pytorch.org/whl/cu124/torchaudio-2.6.0%2Bcu124-cp311-cp311-linux_x86_64.whl
 torchdata==0.11.0
