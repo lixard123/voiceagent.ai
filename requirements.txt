@@ -1,10 +1,7 @@
 streamlit
 torchaudio
-speechbrain
 streamlit-webrtc
-av
 numpy
-protobuf
-typing_extensions
+
 
 
