@@ -1,64 +1,26 @@
+# app.py
 import streamlit as st
-import torchaudio
-from speechbrain.pretrained import EncoderClassifier
-import tempfile
-from streamlit_webrtc import webrtc_streamer
+from transformers import pipeline
+from streamlit_webrtc import webrtc_streamer, AudioProcessorBase
 import av
 import numpy as np
-import wave
+import tempfile
 import os
+import torchaudio
 
-# -------------------- Load the model --------------------
+st.set_page_config(page_title="English Accent Classifier", layout="centered")
+st.title("🎙️ English Accent Classification")
+st.markdown("Upload an audio file or record via mic to classify your English accent.")
+
+# Load model once
 @st.cache_resource
 def load_model():
-    return EncoderClassifier.from_hparams(
-        source="speechbrain/accent-id-ecapa",
-        savedir="tmp_accent_id",
-        use_auth_token=True  # Requires huggingface-cli login or token in env
-    )
+    return pipeline("audio-classification", model="dima806/english_accents_classification")
 
-# Attempt to load the model
-try:
-    model = load_model()
-except Exception as e:
-    st.error(f"❌ Error loading model: {e}")
-    st.stop()
+pipe = load_model()
 
-# -------------------- Page Configuration --------------------
-st.set_page_config(page_title="Accent Classifier", page_icon="🎙️")
-st.title("🎙️ Accent Classifier AI")
-st.write("Upload an English speech audio file or record from your microphone to detect the accent.")
-
-# -------------------- Helper Function --------------------
-def classify_and_display(path):
-    with st.spinner("Analyzing..."):
-        try:
-            if os.path.exists(path):
-                prediction = model.classify_file(path)
-                st.success(f"✅ Detected Accent: **{prediction[0]}**")
-            else:
-                st.error(f"❌ File not found at {path}")
-        except Exception as e:
-            st.error(f"❌ Error during classification: {e}")
-
-# -------------------- File Upload Section --------------------
-st.header("📁 Upload Audio File")
-uploaded_file = st.file_uploader("Choose a .wav or .mp3 file", type=["wav", "mp3"])
-
-if uploaded_file:
-    file_extension = os.path.splitext(uploaded_file.name)[1]
-    with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as tmp:
-        tmp.write(uploaded_file.read())
-        tmp_path = tmp.name
-
-    st.audio(tmp_path, format=uploaded_file.type)
-    classify_and_display(tmp_path)
-    os.remove(tmp_path)
-
-# -------------------- Microphone Input Section --------------------
-st.header("🎤 Or Record Using Microphone")
-
-class AudioProcessor:
+# ---- Audio Processor for Mic ----
+class AudioProcessor(AudioProcessorBase):
     def __init__(self):
         self.frames = []
 
@@ -67,29 +29,59 @@ class AudioProcessor:
         self.frames.append(audio)
         return frame
 
-processor = AudioProcessor()
+    def get_audio(self):
+        if self.frames:
+            audio = np.concatenate(self.frames, axis=1)
+            self.frames = []
+            return audio
+        return None
 
-ctx = webrtc_streamer(
-    key="mic",
-    audio_receiver_size=1024,
-    media_stream_constraints={"audio": True, "video": False},
-    rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
-    audio_frame_callback=processor.recv
-)
+# ---- UI for Input Mode ----
+input_mode = st.radio("Select Input Mode", ["Upload Audio File", "Record from Microphone"])
 
-if not ctx.state.playing and processor.frames:
-    try:
-        audio_data = b''.join([frame.astype(np.int16).tobytes() for frame in processor.frames])
-        wav_path = "mic_recording.wav"
-        with wave.open(wav_path, 'wb') as wf:
-            wf.setnchannels(1)
-            wf.setsampwidth(2)
-            wf.setframerate(16000)
-            wf.writeframes(audio_data)
+audio_path = None
 
-        st.audio(wav_path)
-        classify_and_display(wav_path)
-        os.remove(wav_path)
+if input_mode == "Upload Audio File":
+    uploaded_file = st.file_uploader("Upload an audio file (.wav or .mp3)", type=["wav", "mp3"])
+    if uploaded_file:
+        st.audio(uploaded_file)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+            tmp.write(uploaded_file.read())
+            audio_path = tmp.name
 
-    except Exception as e:
-        st.error(f"❌ Error processing microphone audio: {e}")
+elif input_mode == "Record from Microphone":
+    st.info("Click 'Start' and speak into the mic.")
+    ctx = webrtc_streamer(
+        key="mic",
+        mode="sendonly",
+        audio_receiver_size=1024,
+        client_settings={"media_stream_constraints": {"audio": True, "video": False}},
+        rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
+        async_processing=True,
+        audio_processor_factory=AudioProcessor,
+    )
+
+    if ctx.state.playing:
+        if st.button("Save Recording and Run Classification"):
+            audio = ctx.audio_processor.get_audio()
+            if audio is not None:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+                    # Save as mono-channel, 16kHz
+                    torchaudio.save(tmp.name, torch.tensor(audio).float(), 16000)
+                    audio_path = tmp.name
+            else:
+                st.warning("No audio recorded yet.")
+
+# ---- Run Inference ----
+if st.button("Run Accent Classification") and audio_path:
+    with st.spinner("Running model..."):
+        try:
+            results = pipe(audio_path)
+            st.success("Prediction complete!")
+            st.write("### 🎧 Top Predictions:")
+            for r in results:
+                st.write(f"**{r['label']}**: {r['score']:.2%}")
+        except Exception as e:
+            st.error(f"Error during inference: {e}")
+        finally:
+            os.remove(audio_path)
