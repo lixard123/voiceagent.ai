@@ -2,10 +2,12 @@
 import streamlit as st
 from transformers import pipeline
 from streamlit_webrtc import webrtc_streamer, AudioProcessorBase
+from streamlit_webrtc import webrtc_streamer, WebRtcMode 
 import av
 import numpy as np
 import tempfile
 import os
+import torch
 import torchaudio
 
 st.set_page_config(page_title="English Accent Classifier", layout="centered")
@@ -53,9 +55,9 @@ elif input_mode == "Record from Microphone":
     st.info("Click 'Start' and speak into the mic.")
     ctx = webrtc_streamer(
         key="mic",
-        mode="sendonly",
+        mode=WebRtcMode.SENDONLY,
         audio_receiver_size=1024,
-        client_settings={"media_stream_constraints": {"audio": True, "video": False}},
+        #client_settings={"media_stream_constraints": {"audio": True, "video": False}},
         rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
         async_processing=True,
         audio_processor_factory=AudioProcessor,
